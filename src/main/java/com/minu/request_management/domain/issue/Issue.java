@@ -1,5 +1,8 @@
 package com.minu.request_management.domain.issue;
 
+import org.springframework.util.Assert;
+import com.minu.request_management.common.time.TimeProvider;
+
 import java.time.LocalDate;
 import java.time.LocalDateTime;
 
@@ -23,9 +26,11 @@ public class Issue {
     private LocalDateTime insertDate;          // 요청 등록일자
     private LocalDateTime updateDate;          // 최종 수정일자
 
+    private final TimeProvider timeProvider;
+
     // 생성자
     // 요청 시점에 issue에 필요한 필드
-    public Issue(String requesterId, String moduleCode, String title, String content, LocalDate desiredDueDate) {
+    public Issue(String requesterId, String moduleCode, String title, String content, LocalDate desiredDueDate,TimeProvider timeProvider) {
         //초기 입력시 필수체크 추가
         validateNotBlank(requesterId, "requesterId");
         validateNotBlank(moduleCode, "moduleCode");
@@ -39,7 +44,8 @@ public class Issue {
         this.desiredDueDate = desiredDueDate;
 
         this.status = IssueStatus.REQUESTED;
-        this.insertDate = LocalDateTime.now();
+        this.insertDate = timeProvider.now();
+        this.timeProvider = timeProvider;
     }
 
     // 행위 로직
@@ -70,7 +76,7 @@ public class Issue {
             throw new IllegalStateException("처리 중인 이슈만 완료할 수 있습니다.");
         }
         this.status = IssueStatus.COMPLETED;
-        this.completedDate = LocalDate.now(); // 완료 시점의 날짜
+        this.completedDate = timeProvider.today(); // 완료 시점의 날짜
 
         //this.updateDate = LocalDateTime.now();
         setUpdateDate();
@@ -78,15 +84,14 @@ public class Issue {
 
     //모든 이슈를 수정하는 행위에 들어가는 updateDate 메소드로 추출
     private void setUpdateDate() {
-        this.updateDate = LocalDateTime.now();
+        this.updateDate = timeProvider.now();
     }
 
     //요청 초기 생성 시 필수체크 메소드
     private static void validateNotBlank(String value, String fieldName) {
-        if (value == null || value.isBlank()) {
-            throw new IllegalArgumentException(fieldName + "는 필수입니다.");
-        }
+        Assert.hasText(value, fieldName + "는 필수입니다.");  //null과 문자포함 검사
     }
+
     // getter
 
     public Long getIssueId() {
