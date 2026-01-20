@@ -8,7 +8,7 @@ import java.time.LocalDateTime;
 
 public class Issue {
 // 필드
-    private Long issueId;                 // 이슈 ID
+    private String issueId;                 // 이슈 ID
     private String requesterId;            // 요청자 ID
     private String assigneeId;             // 담당자 ID
 
@@ -48,11 +48,24 @@ public class Issue {
         this.timeProvider = timeProvider;
     }
 
+    //issueId 할당 (최초 1회)
+    public void assignId(String issueId) {
+        validateNotBlank(issueId, "issueId");
+
+        if (this.issueId != null) {
+            throw new IllegalStateException("issueId는 이미 할당되어 변경할 수 없습니다.");
+        }
+
+        this.issueId = issueId;
+    }
+
     // 행위 로직
     public void assignTo(String assigneeId, LocalDate expectedDueDate) {
         if (this.status != IssueStatus.REQUESTED) {
             throw new IllegalStateException("요청 상태에서만 담당자 배정이 가능합니다.");
         }
+        validateNotBlank(assigneeId, "assigneeId");
+
         this.assigneeId = assigneeId;
         this.expectedDueDate = expectedDueDate;
         this.status = IssueStatus.ASSIGNED;
@@ -94,7 +107,7 @@ public class Issue {
 
     // getter
 
-    public Long getIssueId() {
+    public String getIssueId() {
         return issueId;
     }
 
