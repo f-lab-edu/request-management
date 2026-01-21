@@ -32,8 +32,13 @@ public class DefaultIssueIdGenerator implements IssueIdGenerator {
 
     @Override
     public String generate() {
-        String date = timeProvider.today().format(FORMATTER);
+        /*String date = timeProvider.today().format(FORMATTER);
         int seq = sequence.incrementAndGet();
-        return "ISSUE-" + date + "-" + String.format("%06d", seq);
+        return "ISSUE-" + date + "-" + String.format("%06d", seq);*/
+        return String.format(
+                "ISSUE-%s-%06d",
+                timeProvider.today().format(FORMATTER),
+                sequence.incrementAndGet()
+        );
     }
 }
