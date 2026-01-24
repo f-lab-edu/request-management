@@ -5,6 +5,7 @@ import com.minu.request_management.common.time.TimeProvider;
 import com.minu.request_management.domain.issue.Issue;
 import com.minu.request_management.domain.issue.id.IssueIdGenerator;
 import com.minu.request_management.domain.issue.repository.IssueRepository;
+import com.minu.request_management.domain.user.User;
 
 import java.time.LocalDate;
 
@@ -23,9 +24,9 @@ public class IssueService {
     /**
      * 이슈 등록
      */
-    public Issue createIssue(String requesterId,String moduleCode,String title,String content,LocalDate desiredDueDate) {
+    public Issue createIssue(User requester, String moduleCode, String title, String content, LocalDate desiredDueDate) {
 
-        Issue issue = new Issue(requesterId, moduleCode, title, content, desiredDueDate, timeProvider);
+        Issue issue = new Issue(requester, moduleCode, title, content, desiredDueDate, timeProvider);
 
         String issueId = issueIdGenerator.generate();
         issue.assignId(issueId);

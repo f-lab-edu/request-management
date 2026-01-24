@@ -2,6 +2,8 @@ package com.minu.request_management.domain.issue.repository;
 
 import com.minu.request_management.common.time.FixedTimeProvider;
 import com.minu.request_management.domain.issue.Issue;
+import com.minu.request_management.domain.user.User;
+import com.minu.request_management.domain.user.UserRole;
 import org.junit.jupiter.api.Test;
 
 import java.time.LocalDate;
@@ -18,7 +20,14 @@ class InMemoryIssueRepositoryTest {
 
         InMemoryIssueRepository repository = new InMemoryIssueRepository();
 
-        Issue issue = new Issue("REQ1", "HR", "제목", "내용", LocalDate.of(2026, 1, 10), timeProvider);
+        User requester = new User(
+                "REQ1", "요청자", null,
+                null, null, null,
+                UserRole.REQUESTER, null,
+                timeProvider
+        );
+
+        Issue issue = new Issue(requester, "HR", "제목", "내용", LocalDate.of(2026, 1, 10), timeProvider);
         issue.assignId("ISSUE-20260101-000001");
 
         // InMemory 저장
@@ -38,7 +47,13 @@ class InMemoryIssueRepositoryTest {
 
         InMemoryIssueRepository repository = new InMemoryIssueRepository();
 
-        Issue issue = new Issue("REQ1", "HR", "제목", "내용", LocalDate.of(2026, 1, 10), timeProvider);
+        User requester = new User(
+                "REQ1", "요청자", null,
+                null, null, null,
+                UserRole.REQUESTER, null,
+                timeProvider
+        );
+        Issue issue = new Issue(requester, "HR", "제목", "내용", LocalDate.of(2026, 1, 10), timeProvider);
         // issue.assignId(...)
 
         assertThrows(IllegalStateException.class, () -> repository.save(issue));

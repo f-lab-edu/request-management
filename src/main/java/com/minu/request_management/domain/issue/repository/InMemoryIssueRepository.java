@@ -23,10 +23,10 @@ public class InMemoryIssueRepository implements IssueRepository {
 
     @Override
     public Issue save(Issue issue) {
-        /* repository가 id가 반드시 있어야한다는 규칙 알필요 없음(test에서 검증)
+
         if (issue.getIssueId() == null || issue.getIssueId().isBlank()) {
             throw new IllegalStateException("저장하려면 issueId가 먼저 할당되어야 합니다.");
-        }*/
+        }
 
         /*
          * Map.put(key, value)
