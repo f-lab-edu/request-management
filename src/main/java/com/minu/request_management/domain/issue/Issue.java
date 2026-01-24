@@ -77,7 +77,21 @@ public class Issue {
     }
 
     public void inProgress(User staff) {
-        assertStaffOrAdmin(staff);
+        // 관리자라면 무조건 가능
+        if (staff.getRole() == UserRole.ADMIN) {
+            // 통과
+        }
+        // STAFF 인 경우 → 본인 담당 이슈만 가능
+        else if (staff.getRole() == UserRole.STAFF) {
+            if (!staff.getUserId().equals(this.assigneeId)) {
+                throw new IllegalStateException("담당자가 아닌 직원은 처리할 수 없습니다.");
+            }
+        }
+        // 그 외 (REQUESTER 등)
+        else {
+            throw new IllegalStateException("처리 권한이 없습니다.");
+        }
+
         if (this.status != IssueStatus.ASSIGNED) {
             throw new IllegalStateException("담당자가 배정된 이슈만 처리 시작할 수 있습니다.");
         }
@@ -88,7 +102,21 @@ public class Issue {
     }
 
     public void complete(User staff) {
-        assertStaffOrAdmin(staff);
+        // 관리자라면 무조건 가능
+        if (staff.getRole() == UserRole.ADMIN) {
+            // 통과
+        }
+        // STAFF 인 경우 → 본인 담당 이슈만 가능
+        else if (staff.getRole() == UserRole.STAFF) {
+            if (!staff.getUserId().equals(this.assigneeId)) {
+                throw new IllegalStateException("담당자가 아닌 직원은 처리할 수 없습니다.");
+            }
+        }
+        // 그 외 (REQUESTER 등)
+        else {
+            throw new IllegalStateException("처리 권한이 없습니다.");
+        }
+
         if (this.status != IssueStatus.IN_PROGRESS) {
             throw new IllegalStateException("처리 중인 이슈만 완료할 수 있습니다.");
         }
