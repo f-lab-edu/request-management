@@ -1,9 +1,11 @@
 package com.minu.request_management.domain.issue;
 
+import com.minu.request_management.domain.user.User;
+import com.minu.request_management.domain.user.UserRole;
 import org.junit.jupiter.api.Test;
 
 import com.minu.request_management.common.time.FixedTimeProvider;
-import com.minu.request_management.common.time.TimeProvider;
+
 import java.time.LocalDate;
 import java.time.LocalDateTime;
 
@@ -15,6 +17,23 @@ public class IssueTest {
     private FixedTimeProvider timeProvider =
             new FixedTimeProvider(LocalDateTime.of(2026, 1, 1, 10, 0));
 
+    private User requester = new User(
+            "REQ1", "요청자", null, null, null, null,
+            UserRole.REQUESTER, null,
+            timeProvider
+    );
+
+    private User staff = new User(
+            "STF1", "담당자", null, null, null, null,
+            UserRole.STAFF, null,
+            timeProvider
+    );
+
+    private User admin = new User(
+            "ADM1", "관리자", null, null, null, null,
+            UserRole.ADMIN, null,
+            timeProvider
+    );
     @Test
     void assignTo() {
         /*
@@ -22,12 +41,12 @@ public class IssueTest {
          - 담당자 배정이 가능해야 한다
          - 배정되면 상태는 ASSIGNED로 변경된다
         */
-        Issue issue = new Issue("REQ1", "HR", "제목", "내용", timeProvider.today().plusDays(7), timeProvider);
+        Issue issue = new Issue(requester, "HR", "제목", "내용", timeProvider.today().plusDays(7), timeProvider);
 
-        issue.assignTo("김민우", LocalDate.now().plusDays(3));
+        issue.assignTo(staff , timeProvider.today().plusDays(3));
 
         assertEquals(IssueStatus.ASSIGNED, issue.getStatus());
-        assertEquals("김민우", issue.getAssigneeId());
+        assertEquals(staff.getUserId(), issue.getAssigneeId());
     }
 
     @Test
@@ -36,12 +55,12 @@ public class IssueTest {
          - ASSIGNED 상태에서만 처리 시작이 가능하다
          - REQUESTED 상태에서는 inProgress() 호출 시 예외가 발생해야 한다
         */
-        Issue issue = new Issue("REQ1", "HR", "제목", "내용", timeProvider.today().plusDays(7), timeProvider);
+        Issue issue = new Issue(staff, "HR", "제목", "내용", timeProvider.today().plusDays(7), timeProvider);
 
-        assertThrows(IllegalStateException.class, issue::inProgress);
+        assertThrows(IllegalStateException.class, () -> issue.inProgress(staff));
 
-        issue.assignTo("김민우", timeProvider.today().plusDays(3));
-        issue.inProgress();
+        issue.assignTo(staff, timeProvider.today().plusDays(3));
+        issue.inProgress(staff);
 
         assertEquals(IssueStatus.IN_PROGRESS, issue.getStatus());
     }
@@ -53,9 +72,9 @@ public class IssueTest {
          - 완료 시 상태는 COMPLETED로 변경되고
          - 완료일자가 자동으로 세팅되어야 한다
         */
-        Issue issue = new Issue("REQ1", "HR", "제목", "내용", timeProvider.today().plusDays(7), timeProvider);
+        Issue issue = new Issue(staff, "HR", "제목", "내용", timeProvider.today().plusDays(7), timeProvider);
 
-        issue.assignTo("김민우", timeProvider.today().plusDays(3));
+        issue.assignTo(staff, timeProvider.today().plusDays(3));
         //도메인에선 등록시 현재 시간과 완료 시 현재 시간이 다르므로 고정된 현재 시간으론 테스트 불가
         //issue.inProgress();
         //issue.complete();
@@ -63,11 +82,11 @@ public class IssueTest {
         //시간 흐름 추가
         // 1월 3일로 시간 이동
         timeProvider.plusDays(2);
-        issue.inProgress();
+        issue.inProgress(staff);
 
         // 1월 10일로 시간 이동
         timeProvider.plusDays(7);
-        issue.complete();
+        issue.complete(staff);
 
         assertEquals(IssueStatus.COMPLETED, issue.getStatus());
         assertNotNull(issue.getCompletedDate());

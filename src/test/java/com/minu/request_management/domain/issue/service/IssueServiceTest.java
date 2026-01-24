@@ -5,6 +5,8 @@ import com.minu.request_management.domain.issue.Issue;
 import com.minu.request_management.domain.issue.IssueStatus;
 import com.minu.request_management.domain.issue.id.DefaultIssueIdGenerator;
 import com.minu.request_management.domain.issue.repository.InMemoryIssueRepository;
+import com.minu.request_management.domain.user.User;
+import com.minu.request_management.domain.user.UserRole;
 import org.junit.jupiter.api.Test;
 
 import java.time.LocalDate;
@@ -25,9 +27,22 @@ class IssueServiceTest {
 
         IssueService service = new IssueService(repository, idGenerator, timeProvider);
 
+        // ✅ requester(User) 생성
+        User requester = new User(
+                "REQ1",
+                "요청자",
+                null,
+                null,
+                null,
+                null,
+                UserRole.REQUESTER,
+                null,
+                timeProvider
+        );
+
         // when
         Issue issue = service.createIssue(
-                "REQ1",
+                requester,
                 "HR",
                 "제목",
                 "내용",
@@ -45,8 +60,21 @@ class IssueServiceTest {
         FixedTimeProvider timeProvider =
                 new FixedTimeProvider(LocalDateTime.of(2026, 1, 1, 10, 0));
 
-        Issue issue = new Issue(
+        // ✅ requester(User) 생성
+        User requester = new User(
                 "REQ1",
+                "요청자",
+                null,
+                null,
+                null,
+                null,
+                UserRole.REQUESTER,
+                null,
+                timeProvider
+        );
+
+        Issue issue = new Issue(
+                requester,
                 "HR",
                 "제목",
                 "내용",

@@ -1,5 +1,7 @@
 package com.minu.request_management.domain.issue;
 
+import com.minu.request_management.domain.user.User;
+import com.minu.request_management.domain.user.UserRole;
 import org.springframework.util.Assert;
 import com.minu.request_management.common.time.TimeProvider;
 
@@ -30,14 +32,14 @@ public class Issue {
 
     // 생성자
     // 요청 시점에 issue에 필요한 필드
-    public Issue(String requesterId, String moduleCode, String title, String content, LocalDate desiredDueDate,TimeProvider timeProvider) {
+    public Issue(User requester, String moduleCode, String title, String content, LocalDate desiredDueDate,TimeProvider timeProvider) {
         //초기 입력시 필수체크 추가
-        validateNotBlank(requesterId, "requesterId");
+        Assert.notNull(requester, "requester는 필수입니다.");
         validateNotBlank(moduleCode, "moduleCode");
         validateNotBlank(title, "title");
         validateNotBlank(content, "content");
 
-        this.requesterId = requesterId;
+        this.requesterId = requester.getUserId();
         this.moduleCode = moduleCode;
         this.title = title;
         this.content = content;
@@ -60,13 +62,13 @@ public class Issue {
     }
 
     // 행위 로직
-    public void assignTo(String assigneeId, LocalDate expectedDueDate) {
+    public void assignTo(User staff, LocalDate expectedDueDate) {
+        assertStaffOrAdmin(staff);
         if (this.status != IssueStatus.REQUESTED) {
             throw new IllegalStateException("요청 상태에서만 담당자 배정이 가능합니다.");
         }
+        this.assigneeId = staff.getUserId();
         validateNotBlank(assigneeId, "assigneeId");
-
-        this.assigneeId = assigneeId;
         this.expectedDueDate = expectedDueDate;
         this.status = IssueStatus.ASSIGNED;
 
@@ -74,7 +76,8 @@ public class Issue {
         setUpdateDate();
     }
 
-    public void inProgress() {
+    public void inProgress(User staff) {
+        assertStaffOrAdmin(staff);
         if (this.status != IssueStatus.ASSIGNED) {
             throw new IllegalStateException("담당자가 배정된 이슈만 처리 시작할 수 있습니다.");
         }
@@ -84,7 +87,8 @@ public class Issue {
         setUpdateDate();
     }
 
-    public void complete() {
+    public void complete(User staff) {
+        assertStaffOrAdmin(staff);
         if (this.status != IssueStatus.IN_PROGRESS) {
             throw new IllegalStateException("처리 중인 이슈만 완료할 수 있습니다.");
         }
@@ -93,6 +97,64 @@ public class Issue {
 
         //this.updateDate = LocalDateTime.now();
         setUpdateDate();
+    }
+
+    public boolean isOverdue() {
+        if (this.status == IssueStatus.COMPLETED) return false;
+        if (this.expectedDueDate == null) return false; // 배정 전이면 판단 불가
+        return timeProvider.today().isAfter(this.expectedDueDate);
+    }
+
+    public boolean isLateCompleted() {
+        // 완료된 건만 "지연 완료" 판단 가능
+        if (this.status != IssueStatus.COMPLETED) {
+            return false;
+        }
+
+        // 예상 완료일/완료일이 없으면 비교 불가
+        if (this.expectedDueDate == null || this.completedDate == null) {
+            return false;
+        }
+
+        // LocalDate#isAfter(다른 날짜): "이 날짜가 다른 날짜보다 이후인지" boolean 반환
+        // 예) 2026-01-10.isAfter(2026-01-08) == true
+        return this.completedDate.isAfter(this.expectedDueDate);
+    }
+
+    public void reassignTo(User admin, User newAssignee, LocalDate expectedDueDate) {
+        assertAdmin(admin); // 재배정은 관리자만
+
+        Assert.notNull(newAssignee, "newAssignee는 필수입니다.");
+
+        if (this.status == IssueStatus.REQUESTED) {
+            throw new IllegalStateException("배정 전 이슈는 재배정할 수 없습니다. 먼저 배정하세요.");
+        }
+
+        if (this.status == IssueStatus.COMPLETED) {
+            throw new IllegalStateException("완료된 이슈는 재배정할 수 없습니다.");
+        }
+
+        // 담당자 변경
+        this.assigneeId = newAssignee.getUserId();
+        this.expectedDueDate = expectedDueDate;
+
+        setUpdateDate();
+    }
+
+    //staff 또는 admin
+    private static void assertStaffOrAdmin(User staff) {
+        Assert.notNull(staff, "staff 필수입니다.");
+        if (!staff.isStaffOrAdmin()) {
+            throw new IllegalStateException("권한이 없습니다. (담당자 또는 관리자만 가능합니다.)");
+        }
+    }
+
+    //admin 인지 아닌지
+    private static void assertAdmin(User admin) {
+        Assert.notNull(admin, "admin 필수입니다.");
+        if (admin.getRole() != UserRole.ADMIN) {
+            throw new IllegalStateException("권한이 없습니다. (관리자만 가능합니다.)");
+        }
     }
 
     //모든 이슈를 수정하는 행위에 들어가는 updateDate 메소드로 추출
